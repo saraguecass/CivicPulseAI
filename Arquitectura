@@ -3,3 +3,11 @@ Backend (Node/FastAPI): endpoints /route (proxy a OSRM), /parkings?lat&lon&radio
 Frontend: MapLibre + capa de puntos coloreados por tipo + LineString de la ruta. Al pedir ruta: geocodifica origen y destino, calcula ruta al destino, estima llegada ETA = ahora + duration, busca parkings del tipo elegido en un radio (300–500 m) del destino, y ofrece "ir al más cercano" recalculando la ruta al parking.
 Flujo de llegada: geofence de ~50 m alrededor del parking → modal "¿Has pagado?" → si sí: minutos pagados y tipo de zona → finPago = ahora + minutos. Programa notificaciones a 10 y 5 minutos antes. Si el parking está en zona de pago y la hora actual cae fuera del horario SER, no preguntes.
 Recordatorios: Web Push (VAPID) + service worker; opcionalmente un cron en backend que envía el push aunque la pestaña esté cerrada.
+
+
+Capa,Tecnología,Por qué encaja en el MVP
+Frontend,React + Vite + Tailwind CSS,Desarrollo rápido y ligero en móviles.
+Mapas,Leaflet + OpenStreetMap / Carto,"100% gratuito, sin límites de peticiones ni tarjetas."
+Backend,Python (FastAPI) o Node.js (Express),"Fáciles de desplegar en Render, Railway o Fly.io (capas gratuitas)."
+Base de Datos,PostgreSQL + PostGIS (Supabase),Consultas espaciales nativas y capa gratuita generosa.
+Notificaciones,Web Push API + Service Worker,Notificaciones reales en móvil/escritorio sin pagar servicios externos.
