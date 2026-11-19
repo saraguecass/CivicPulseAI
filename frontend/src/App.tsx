@@ -9,6 +9,23 @@ import { fetchZonas, fetchActiveParking } from './services/api';
 import { registerServiceWorker } from './services/notifications';
 import { MapPin, Navigation, Info } from 'lucide-react';
 
+const DISTRICT_VIEWPORTS: Record<string, { center: [number, number]; zoom: number }> = {
+  '': { center: [-3.688, 40.428], zoom: 13 }, // Todo Madrid
+  'Arganzuela': { center: [-3.69814, 40.39883], zoom: 14 },
+  'Carabanchel': { center: [-3.71535, 40.39585], zoom: 14.5 },
+  'Centro': { center: [-3.70569, 40.41777], zoom: 14 },
+  'Chamartín': { center: [-3.67655, 40.4602], zoom: 13.5 },
+  'Chamberí': { center: [-3.70437, 40.43633], zoom: 14.2 },
+  'Ciudad Lineal': { center: [-3.65413, 40.44195], zoom: 13.8 },
+  'Fuencarral - El Pardo': { center: [-3.70135, 40.48041], zoom: 14.5 },
+  'Latina': { center: [-3.73233, 40.41038], zoom: 14.5 },
+  'Moncloa - Aravaca': { center: [-3.7228, 40.44424], zoom: 13.8 },
+  'Retiro': { center: [-3.67737, 40.4087], zoom: 14 },
+  'Salamanca': { center: [-3.67581, 40.43174], zoom: 14 },
+  'Tetuán': { center: [-3.7003, 40.46054], zoom: 14 },
+  'Usera': { center: [-3.70576, 40.3863], zoom: 14.5 },
+};
+
 export const App: React.FC = () => {
   const [geojsonData, setGeojsonData] = useState<SERGeoJSONFeatureCollection | null>(null);
   const [filters, setFilters] = useState<FilterState>({
@@ -35,9 +52,14 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Recargar zonas cuando cambia el filtro de distrito
+  // Recargar zonas y centrar automáticamente el mapa cuando cambia el filtro de distrito
   useEffect(() => {
     loadZonas();
+
+    const target = DISTRICT_VIEWPORTS[filters.distrito];
+    if (target) {
+      setFlyToCoords(target.center);
+    }
   }, [filters.distrito]);
 
   const loadZonas = async () => {
@@ -52,6 +74,14 @@ export const App: React.FC = () => {
   };
 
   const handleSelectStreet = (street: StreetSearchResult) => {
+    // Si la calle pertenece a un distrito distinto al filtro actual, cambiamos al distrito de la calle
+    // para que se carguen y pinten sus tramos en el mapa
+    if (filters.distrito && filters.distrito.toLowerCase() !== street.distrito.toLowerCase()) {
+      setFilters(prev => ({
+        ...prev,
+        distrito: street.distrito
+      }));
+    }
     setFlyToCoords(street.center_coords);
   };
 
