@@ -59,7 +59,7 @@ export const RoutePlannerModal: React.FC<RoutePlannerModalProps> = ({
   const [origen, setOrigen] = useState<string>('Estación de Atocha');
   const [destino, setDestino] = useState<string>('Calle de Serrano');
   const [duracionMinutos, setDuracionMinutos] = useState<number>(120);
-  
+
   // Selector de vehículo y etiqueta interactivo en la propia ruta
   const [vehicle, setVehicle] = useState<VehicleTypeId>(selectedVehicle);
   const [badge, setBadge] = useState<DGTBadgeId>(selectedBadge);
@@ -316,11 +316,10 @@ export const RoutePlannerModal: React.FC<RoutePlannerModalProps> = ({
                     </p>
                   </div>
                   <span
-                    className={`px-2.5 py-1 rounded-xl font-black text-xs shrink-0 ${
-                      routeResult.parking.color === 'VERDE'
-                        ? 'bg-green-100 text-green-800 border border-green-300'
-                        : 'bg-blue-100 text-blue-800 border border-blue-300'
-                    }`}
+                    className={`px-2.5 py-1 rounded-xl font-black text-xs shrink-0 ${routeResult.parking.color === 'VERDE'
+                      ? 'bg-green-100 text-green-800 border border-green-300'
+                      : 'bg-blue-100 text-blue-800 border border-blue-300'
+                      }`}
                   >
                     Zona {routeResult.parking.color}
                   </span>

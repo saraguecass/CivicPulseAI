@@ -45,7 +45,7 @@ export const ParkingModal: React.FC<ParkingModalProps> = ({
     setTipoPlaza(initialTipoPlaza);
     setVehicle(selectedVehicle);
     setBadge(selectedBadge);
-    fetchCurrentSchedule().then(setSchedule).catch(() => {});
+    fetchCurrentSchedule().then(setSchedule).catch(() => { });
   }, [initialCalle, initialTipoPlaza, selectedVehicle, selectedBadge]);
 
   // Recalcular tarifa oficial al cambiar parámetros
@@ -55,7 +55,7 @@ export const ParkingModal: React.FC<ParkingModalProps> = ({
       minutos: duracionMinutos,
       tipo_vehiculo: vehicle,
       distintivo_dgt: badge
-    }).then(setTariff).catch(() => {});
+    }).then(setTariff).catch(() => { });
   }, [tipoPlaza, duracionMinutos, vehicle, badge]);
 
   const vehicleObj = VEHICLE_OPTIONS.find(v => v.id === vehicle);
@@ -213,11 +213,10 @@ export const ParkingModal: React.FC<ParkingModalProps> = ({
                     setDuracionMinutos(120);
                   }
                 }}
-                className={`p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${
-                  tipoPlaza === 'VERDE'
-                    ? 'border-green-500 bg-green-50 text-green-900 shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${tipoPlaza === 'VERDE'
+                  ? 'border-green-500 bg-green-50 text-green-900 shadow-sm'
+                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
               >
                 <span className="font-bold text-xs">Zona Verde</span>
                 <span className="text-[10px] opacity-75">Máx. 2h no residentes</span>
@@ -226,11 +225,10 @@ export const ParkingModal: React.FC<ParkingModalProps> = ({
               <button
                 type="button"
                 onClick={() => { setTipoPlaza('AZUL'); }}
-                className={`p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${
-                  tipoPlaza === 'AZUL'
-                    ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all ${tipoPlaza === 'AZUL'
+                  ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-sm'
+                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
               >
                 <span className="font-bold text-xs">Zona Azul</span>
                 <span className="text-[10px] opacity-75">Máx. 4h rotación</span>
