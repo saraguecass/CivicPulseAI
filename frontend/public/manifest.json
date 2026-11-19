@@ -1,0 +1,17 @@
+{
+  "name": "CivicPulse SER Madrid",
+  "short_name": "SER Madrid",
+  "description": "App para visualizar zonas SER de Madrid, buscar plazas y gestionar avisos de estacionamiento",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
