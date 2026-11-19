@@ -24,14 +24,17 @@ export const Map: React.FC<MapProps> = ({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    // Inicializar mapa centrado en el corazón del SER de Madrid
+    // Inicializar mapa centrado en el corazón del SER de Madrid con soporte completo de perspectiva 3D
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: 'https://tiles.openfreemap.org/styles/liberty',
       center: [-3.688, 40.428], // Zona Salamanca / Chamberí
       zoom: 14,
       maxZoom: 19,
-      minZoom: 11
+      minZoom: 11,
+      pitch: 0,
+      maxPitch: 75, // Permite inclinar la cámara en 3D
+      dragRotate: true
     });
 
     // Controles de navegación y geolocalización nativa
@@ -51,43 +54,79 @@ export const Map: React.FC<MapProps> = ({
         data: geojsonData || { type: 'FeatureCollection', features: [] }
       });
 
-      // Capa de fondo para efecto "glow" o contorno
+      // Capa de fondo para efecto "glow" o contorno que se adapta a la perspectiva del mapa
       map.current.addLayer({
         id: 'ser-line-casing',
         type: 'line',
         source: 'ser-streets',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
         paint: {
           'line-color': '#ffffff',
-          'line-width': 8,
-          'line-opacity': 0.8
+          'line-width': [
+            'interpolate',
+            ['exponential', 1.5],
+            ['zoom'],
+            11, 3,
+            13, 5,
+            15, 9,
+            17, 18,
+            19, 30
+          ],
+          'line-opacity': 0.85
         }
       });
 
-      // Capa Verde
+      // Capa Verde: Escala con el zoom
       map.current.addLayer({
         id: 'ser-line-verde',
         type: 'line',
         source: 'ser-streets',
         filter: ['==', ['get', 'color'], 'VERDE'],
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
         paint: {
           'line-color': '#16a34a',
-          'line-width': 5,
+          'line-width': [
+            'interpolate',
+            ['exponential', 1.5],
+            ['zoom'],
+            11, 2,
+            13, 3.5,
+            15, 6.5,
+            17, 13,
+            19, 22
+          ],
           'line-opacity': 0.95
         }
       });
 
-      // Capa Azul
+      // Capa Azul: Escala con el zoom
       map.current.addLayer({
         id: 'ser-line-azul',
         type: 'line',
         source: 'ser-streets',
         filter: ['==', ['get', 'color'], 'AZUL'],
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
         paint: {
           'line-color': '#2563eb',
-          'line-width': 5,
+          'line-width': [
+            'interpolate',
+            ['exponential', 1.5],
+            ['zoom'],
+            11, 2,
+            13, 3.5,
+            15, 6.5,
+            17, 13,
+            19, 22
+          ],
           'line-opacity': 0.95
         }
       });
@@ -163,6 +202,21 @@ export const Map: React.FC<MapProps> = ({
         'visibility',
         filters.showAzul ? 'visible' : 'none'
       );
+    }
+
+    if (map.current.getLayer('ser-line-casing')) {
+      const activeColors: string[] = [];
+      if (filters.showVerde) activeColors.push('VERDE');
+      if (filters.showAzul) activeColors.push('AZUL');
+
+      map.current.setLayoutProperty(
+        'ser-line-casing',
+        'visibility',
+        activeColors.length > 0 ? 'visible' : 'none'
+      );
+      if (activeColors.length > 0) {
+        map.current.setFilter('ser-line-casing', ['in', ['get', 'color'], ['literal', activeColors]]);
+      }
     }
   }, [filters]);
 

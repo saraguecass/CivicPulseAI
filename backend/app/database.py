@@ -15,7 +15,8 @@ try:
 except Exception as e:
     print(f"[Database] Advertencia al conectar con {db_url}: {e}")
     print("[Database] Cambiando a SQLite local para desarrollo.")
-    db_url = "sqlite:///./civicpulse.db"
+    from app.config import DEFAULT_DB_URL
+    db_url = DEFAULT_DB_URL
     engine = create_engine(db_url, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

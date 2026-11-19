@@ -7,11 +7,20 @@ interface ZoneFiltersProps {
 }
 
 const DISTRITOS = [
-  { value: '', label: 'Todos los distritos' },
-  { value: 'Salamanca', label: 'Salamanca' },
-  { value: 'Chamberí', label: 'Chamberí' },
-  { value: 'Retiro', label: 'Retiro' },
+  { value: '', label: 'Todos los distritos (13)' },
+  { value: 'Arganzuela', label: 'Arganzuela' },
+  { value: 'Carabanchel', label: 'Carabanchel' },
   { value: 'Centro', label: 'Centro' },
+  { value: 'Chamartín', label: 'Chamartín' },
+  { value: 'Chamberí', label: 'Chamberí' },
+  { value: 'Ciudad Lineal', label: 'Ciudad Lineal' },
+  { value: 'Fuencarral', label: 'Fuencarral - El Pardo' },
+  { value: 'Latina', label: 'Latina' },
+  { value: 'Moncloa', label: 'Moncloa - Aravaca' },
+  { value: 'Retiro', label: 'Retiro' },
+  { value: 'Salamanca', label: 'Salamanca' },
+  { value: 'Tetuán', label: 'Tetuán' },
+  { value: 'Usera', label: 'Usera' },
 ];
 
 export const ZoneFilters: React.FC<ZoneFiltersProps> = ({ filters, onChange }) => {
