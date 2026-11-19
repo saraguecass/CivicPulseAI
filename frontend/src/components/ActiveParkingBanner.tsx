@@ -3,6 +3,9 @@ import { Clock, AlertTriangle, Calendar, X, Navigation } from 'lucide-react';
 import { ActiveParking } from '../types';
 import { endParking } from '../services/api';
 
+const parseUtcDate = (value: string) =>
+  new Date(/[zZ]$|[+-]\d{2}:\d{2}$/.test(value) ? value : `${value}Z`);
+
 interface ActiveParkingBannerProps {
   parking: ActiveParking;
   onParkingEnded: () => void;
@@ -20,7 +23,7 @@ export const ActiveParkingBanner: React.FC<ActiveParkingBannerProps> = ({
   useEffect(() => {
     const calculateTime = () => {
       const now = new Date().getTime();
-      const end = new Date(parking.end_time).getTime();
+      const end = parseUtcDate(parking.end_time).getTime();
       const diffSecs = Math.max(0, Math.floor((end - now) / 1000));
       setTimeLeftSeconds(diffSecs);
     };
@@ -33,7 +36,7 @@ export const ActiveParkingBanner: React.FC<ActiveParkingBannerProps> = ({
   const hours = Math.floor(timeLeftSeconds / 3600);
   const minutes = Math.floor((timeLeftSeconds % 3600) / 60);
   const seconds = timeLeftSeconds % 60;
-  const isCritical = timeLeftSeconds > 0 && timeLeftSeconds <= 30 * 60; // Menos de 30 minutos
+  const isCritical = timeLeftSeconds > 0 && timeLeftSeconds <= 30 * 60; 
   const isExpired = timeLeftSeconds === 0;
 
   const handleEndParking = async () => {
@@ -51,8 +54,8 @@ export const ActiveParkingBanner: React.FC<ActiveParkingBannerProps> = ({
 
   // Enlace directo para añadir recordatorio a Google Calendar
   const getGoogleCalendarUrl = () => {
-    const startIso = new Date(parking.start_time).toISOString().replace(/-|:|\.\d\d\d/g, '');
-    const endIso = new Date(parking.end_time).toISOString().replace(/-|:|\.\d\d\d/g, '');
+    const startIso = parseUtcDate(parking.start_time).toISOString().replace(/-|:|\.\d\d\d/g, '');
+    const endIso = parseUtcDate(parking.end_time).toISOString().replace(/-|:|\.\d\d\d/g, '');
     const title = encodeURIComponent(`Fin de Estacionamiento SER (${parking.calle || 'Madrid'})`);
     const details = encodeURIComponent(`Estacionamiento en zona ${parking.tipo_plaza}. Recuerda retirar o renovar tu vehículo.`);
     const location = encodeURIComponent(parking.calle || `${parking.lat},${parking.lng}`);
