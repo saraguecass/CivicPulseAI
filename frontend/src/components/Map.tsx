@@ -231,16 +231,20 @@ export const Map: React.FC<MapProps> = ({
     }
   }, [filters]);
 
-  // Manejar animación FlyTo cuando el usuario selecciona una calle en el buscador
+  // Manejar animación FlyTo cuando el usuario selecciona una calle o filtra por distrito
   useEffect(() => {
     if (!map.current || !flyToCoords) return;
+    
+    // Si hay un distrito activo, ajustar a zoom panorámico del distrito (~14), si es calle concreta zoom 16
+    const targetZoom = filters.distrito ? 14 : 16;
+    
     map.current.flyTo({
       center: flyToCoords,
-      zoom: 16,
+      zoom: targetZoom,
       essential: true,
-      duration: 1800
+      duration: 1600
     });
-  }, [flyToCoords]);
+  }, [flyToCoords, filters.distrito]);
 
   // Pintar marcador del coche aparcado
   useEffect(() => {
