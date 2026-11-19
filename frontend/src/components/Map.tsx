@@ -131,37 +131,48 @@ export const Map: React.FC<MapProps> = ({
         }
       });
 
-      // Popup al hacer click en un tramo SER
-      const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: true, offset: 10 });
+      // Popup al mantener el ratón por encima (hover / mousemove) en un tramo SER
+      const hoverPopup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 12
+      });
 
-      const handleLineClick = (e: any) => {
-        if (!e.features || !e.features[0]) return;
+      const handleLineHover = (e: any) => {
+        if (!e.features || !e.features[0] || !map.current) return;
+        map.current.getCanvas().style.cursor = 'pointer';
+
         const props = e.features[0].properties;
         const colorBadge = props.color === 'VERDE'
           ? '<span class="bg-green-100 text-green-800 font-semibold px-2 py-0.5 rounded text-xs">Zona Verde (Residentes / 2h max)</span>'
           : '<span class="bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded text-xs">Zona Azul (Visitantes / 4h max)</span>';
 
-        popup.setLngLat(e.lngLat)
+        hoverPopup.setLngLat(e.lngLat)
           .setHTML(`
-            <div class="p-2 font-sans">
+            <div class="p-2 font-sans pointer-events-none">
               <h3 class="font-bold text-gray-900 text-sm mb-1">${props.nombre_calle}</h3>
               <div class="mb-2">${colorBadge}</div>
               <p class="text-xs text-gray-600 mb-1"><strong>Plazas:</strong> ${props.num_plazas}</p>
               <p class="text-xs text-gray-500"><strong>Distrito:</strong> ${props.distrito || 'Madrid'} (${props.barrio || ''})</p>
             </div>
           `)
-          .addTo(map.current!);
+          .addTo(map.current);
       };
 
-      map.current.on('click', 'ser-line-verde', handleLineClick);
-      map.current.on('click', 'ser-line-azul', handleLineClick);
+      const handleLineLeave = () => {
+        if (!map.current) return;
+        map.current.getCanvas().style.cursor = '';
+        hoverPopup.remove();
+      };
 
-      map.current.on('mouseenter', 'ser-line-verde', () => { map.current!.getCanvas().style.cursor = 'pointer'; });
-      map.current.on('mouseleave', 'ser-line-verde', () => { map.current!.getCanvas().style.cursor = ''; });
-      map.current.on('mouseenter', 'ser-line-azul', () => { map.current!.getCanvas().style.cursor = 'pointer'; });
-      map.current.on('mouseleave', 'ser-line-azul', () => { map.current!.getCanvas().style.cursor = ''; });
+      // Eventos Hover: mostrar tooltip solo al pasar o mover el ratón por encima
+      map.current.on('mousemove', 'ser-line-verde', handleLineHover);
+      map.current.on('mouseleave', 'ser-line-verde', handleLineLeave);
 
-      // Click en cualquier punto del mapa para seleccionar ubicación de aparcamiento
+      map.current.on('mousemove', 'ser-line-azul', handleLineHover);
+      map.current.on('mouseleave', 'ser-line-azul', handleLineLeave);
+
+      // Click en cualquier punto del mapa exclusivamente para seleccionar ubicación de aparcamiento
       map.current.on('click', (e) => {
         if (onSelectLocation) {
           onSelectLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
