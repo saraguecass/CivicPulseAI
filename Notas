@@ -1,1 +1,3 @@
 https://datos.madrid.es/dataset/218228-0-ser-calles/resource/218228-1-ser-calles-csv
+
+Mapa (frontend): MapLibre GL JS es la opción más sólida hoy: gratis, vectorial, GPU, y con estilos listos de OpenFreeMap (https://tiles.openfreemap.org/styles/liberty) sin clave ni límite de peticiones
