@@ -157,7 +157,7 @@ export const App: React.FC = () => {
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
         <button
           onClick={handleOpenParkingModal}
-          className="flex items-center gap-2.5 px-6 py-3.5 bg-gray-900 hover:bg-black text-white font-bold text-sm rounded-full shadow-2xl transition-all active:scale-95 border-2 border-white/20"
+          className="flex items-center gap-2.5 px-6 py-3.5 bg-white hover:bg-gray-300 text-black font-bold text-sm rounded-full shadow-2xl transition-all active:scale-95 border-2 border-white/20"
         >
           <span className="text-base">🚗</span>
           Aparcar mi coche aquí
