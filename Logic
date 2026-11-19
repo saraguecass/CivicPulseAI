@@ -1,0 +1,9 @@
+-> Lógica de tiempo y tarifas
+Horario SER (según fuentes secundarias, conviene confirmarlo en la web municipal): L-V 9–21 h, sábados 9–15 h, domingos y festivos gratis; agosto y 24/31 de diciembre con horario reducido.⁠
+Duración máxima: zona azul 4 h; zona verde para no residentes 2 h.⁠
+Tarifas: hay tarifa base con reducciones/recargos por etiqueta ambiental DGT y por episodios de NO₂; los importes concretos están en la tabla oficial de la sede municipal, no los fijes a mano en el código.⁠
+Exentos de pago: entre otros, vehículos de dos y tres ruedas, "0 Emisiones" de la DGT, PMR con autorización y taxis en servicio. Útil para no preguntar "¿has pagado?" a alguien que no debe pagar.⁠
+Cálculo del recordatorio: si llegas a las 20:30 y pagas 60 min, el aviso útil no es "a las 21:30" sino "a las 21:00, fin de la SER". Ajusta finPago = min(ahora + minutos, finHorarioSER).
+
+-- https://www.motor.mapfre.es/consejos-practicos/seguridad-vial/tarifas-y-horarios-de-la-zona-azul-madrid/
+-- https://www.madrid.es/portales/munimadrid/es/Inicio/Movilidad-y-transportes/Servicio-de-Estacionamiento-Regulado-SER-Tarifas-y-vehiculos-no-sujetos-al-pago/?vgnextfmt=default&vgnextoid=972be4ce78dd6410VgnVCM1000000b205a0aRCRD&vgnextchannel=220e31d3b28fe410VgnVCM1000000b205a0aRCRD

@@ -5,3 +5,5 @@ Mapa (frontend): MapLibre GL JS es la opción más sólida hoy: gratis, vectoria
 Rutas en coche: OSRM (API /route/v1/driving/...) o Valhalla / GraphHopper, todos open source sobre datos OSM.
 
 Geocodificación (buscar "Puerta del Sol"): Nominatim público solo admite máximo 1 petición/segundo, User-Agent identificable, sin autocompletado y con caché obligatoria. Para una web con usuarios, monta tu propio Nominatim o usa Photon autoalojado.
+
+GPS: navigator.geolocation.watchPosition() del navegador. Requiere HTTPS y permiso del usuario
