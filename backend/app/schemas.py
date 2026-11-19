@@ -38,7 +38,7 @@ class StreetSearchResult(BaseModel):
 
 # --- Esquemas de Estacionamiento ---
 class ParkingCreate(BaseModel):
-    user_id: Optional[str] = "anon-user"
+    user_id: str
     calle: Optional[str] = "Calle Madrid"
     tipo_plaza: str = "VERDE"
     lat: float

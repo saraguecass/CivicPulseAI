@@ -28,7 +28,7 @@ def registrar_estacionamiento(
 
 @router.get("/activo", response_model=Optional[ParkingOut])
 def obtener_estacionamiento_activo(
-    user_id: str = Query("anon-user", description="Identificador anónimo del usuario/dispositivo"),
+    user_id: str = Query(..., description="Identificador anónimo del usuario/dispositivo"),
     db: Session = Depends(get_db)
 ):
     """
@@ -40,12 +40,13 @@ def obtener_estacionamiento_activo(
 @router.delete("/{parking_id}", status_code=status.HTTP_204_NO_CONTENT)
 def finalizar_estacionamiento(
     parking_id: int,
+    user_id: str = Query(..., description="Identificador anónimo del usuario/dispositivo"),
     db: Session = Depends(get_db)
 ):
     """
     Finaliza o cancela el estacionamiento activo.
     """
-    success = delete_parking(db=db, parking_id=parking_id)
+    success = delete_parking(db=db, parking_id=parking_id, user_id=user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Estacionamiento no encontrado")
     return None

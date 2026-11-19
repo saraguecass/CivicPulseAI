@@ -1,6 +1,16 @@
 import { SERGeoJSONFeatureCollection, StreetSearchResult, ActiveParking } from '../types';
 
 const API_BASE = '/api';
+const ANONYMOUS_USER_ID_KEY = 'spotly-anonymous-user-id';
+
+export function getAnonymousUserId(): string {
+  let userId = localStorage.getItem(ANONYMOUS_USER_ID_KEY);
+  if (!userId) {
+    userId = crypto.randomUUID();
+    localStorage.setItem(ANONYMOUS_USER_ID_KEY, userId);
+  }
+  return userId;
+}
 
 export async function fetchZonas(params?: {
   color?: string;
@@ -31,7 +41,7 @@ export async function createParking(data: {
   lng: number;
   start_time: string;
   end_time: string;
-  user_id?: string;
+  user_id: string;
   push_subscription?: any;
 }): Promise<ActiveParking> {
   const res = await fetch(`${API_BASE}/estacionamientos`, {
@@ -43,14 +53,14 @@ export async function createParking(data: {
   return res.json();
 }
 
-export async function fetchActiveParking(userId: string = 'anon-user'): Promise<ActiveParking | null> {
+export async function fetchActiveParking(userId: string = getAnonymousUserId()): Promise<ActiveParking | null> {
   const res = await fetch(`${API_BASE}/estacionamientos/activo?user_id=${encodeURIComponent(userId)}`);
   if (!res.ok) return null;
   return res.json();
 }
 
-export async function endParking(parkingId: number): Promise<boolean> {
-  const res = await fetch(`${API_BASE}/estacionamientos/${parkingId}`, {
+export async function endParking(parkingId: number, userId: string = getAnonymousUserId()): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/estacionamientos/${parkingId}?user_id=${encodeURIComponent(userId)}`, {
     method: 'DELETE'
   });
   return res.ok;

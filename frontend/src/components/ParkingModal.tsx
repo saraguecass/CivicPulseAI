@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Clock, MapPin, Bell, ShieldCheck, Check } from 'lucide-react';
-import { createParking } from '../services/api';
+import { createParking, getAnonymousUserId } from '../services/api';
 import { subscribeToPushNotifications } from '../services/notifications';
 import { ActiveParking } from '../types';
 
@@ -40,6 +40,7 @@ export const ParkingModal: React.FC<ParkingModalProps> = ({
       }
 
       const parking = await createParking({
+        user_id: getAnonymousUserId(),
         calle,
         tipo_plaza: tipoPlaza,
         lat: coords.lat,

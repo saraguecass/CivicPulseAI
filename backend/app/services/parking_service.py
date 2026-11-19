@@ -80,8 +80,11 @@ def get_active_parking(db: Session, user_id: str) -> Optional[ParkingOut]:
         minutos_restantes=minutos_restantes
     )
 
-def delete_parking(db: Session, parking_id: int) -> bool:
-    parking = db.query(ActiveParking).filter(ActiveParking.id == parking_id).first()
+def delete_parking(db: Session, parking_id: int, user_id: str) -> bool:
+    parking = db.query(ActiveParking).filter(
+        ActiveParking.id == parking_id,
+        ActiveParking.user_id == user_id
+    ).first()
     if parking:
         db.delete(parking)
         db.commit()
