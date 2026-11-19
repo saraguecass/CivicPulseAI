@@ -1,6 +1,6 @@
 {
-  "name": "CivicPulse SER Madrid",
-  "short_name": "SER Madrid",
+  "name": "Spotly SER Madrid",
+  "short_name": "Spotly",
   "description": "App para visualizar zonas SER de Madrid, buscar plazas y gestionar avisos de estacionamiento",
   "start_url": "/",
   "display": "standalone",
