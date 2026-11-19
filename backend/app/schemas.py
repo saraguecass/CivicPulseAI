@@ -45,6 +45,8 @@ class ParkingCreate(BaseModel):
     lng: float
     start_time: datetime
     end_time: datetime
+    tipo_vehiculo: Optional[str] = "turismo"
+    distintivo_dgt: Optional[str] = "C"
     push_subscription: Optional[Dict[str, Any]] = None
 
 class ParkingOut(BaseModel):
@@ -60,6 +62,27 @@ class ParkingOut(BaseModel):
     notification_sent: bool
     created_at: datetime
     minutos_restantes: int = 0
+    limitado_por_ser: bool = False
+    explicacion_ajuste: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+# --- Esquemas de Cálculo de Tarifas y SER ---
+class TariffCalculationRequest(BaseModel):
+    tipo_plaza: str = "VERDE"
+    minutos: int = 120
+    tipo_vehiculo: str = "turismo"
+    distintivo_dgt: str = "C"
+    episodio_no2: str = "normal"
+    start_time: Optional[datetime] = None
+
+# --- Esquemas de Planificación de Ruta ---
+class RoutePlanningRequest(BaseModel):
+    origen: Any  # [lng, lat] o nombre de calle/punto
+    destino: Any # [lng, lat] o nombre de calle/punto
+    tipo_vehiculo: str = "turismo"
+    distintivo_dgt: str = "C"
+    duracion_minutos: int = 120
+    episodio_no2: str = "normal"
+    start_time: Optional[datetime] = None

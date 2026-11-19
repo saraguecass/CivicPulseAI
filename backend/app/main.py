@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base, SessionLocal
-from app.routes import zonas, calles, estacionamientos
+from app.routes import zonas, calles, estacionamientos, ser_info, rutas, geocoding
 from app.scheduler import start_scheduler, stop_scheduler
 from app.etl.mock_madrid_data import seed_database_if_empty
 
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="API de CivicPulseAI para visualización del SER de Madrid, búsqueda de plazas y avisos de estacionamiento.",
+    description="API de CivicPulseAI para visualización del SER de Madrid, cálculo de tarifas oficiales 2026, búsqueda de plazas, rutas inteligentes con parada en parking y avisos inteligentes.",
     lifespan=lifespan
 )
 
@@ -47,6 +47,9 @@ app.add_middleware(
 app.include_router(zonas.router, prefix=settings.API_V1_STR)
 app.include_router(calles.router, prefix=settings.API_V1_STR)
 app.include_router(estacionamientos.router, prefix=settings.API_V1_STR)
+app.include_router(ser_info.router, prefix=settings.API_V1_STR)
+app.include_router(rutas.router, prefix=settings.API_V1_STR)
+app.include_router(geocoding.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def health_check():
@@ -57,6 +60,10 @@ def health_check():
         "endpoints": {
             "zonas": "/api/zonas",
             "buscar_calles": "/api/calles/buscar?q=serrano",
-            "estacionamientos": "/api/estacionamientos"
+            "estacionamientos": "/api/estacionamientos",
+            "ser_info": "/api/ser/info",
+            "calcular_tarifa": "/api/ser/calcular-tarifa",
+            "planificar_ruta": "/api/rutas/planificar",
+            "geocoding_autocomplete": "/api/geocoding/autocomplete?q=sol"
         }
     }

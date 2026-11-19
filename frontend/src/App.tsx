@@ -4,10 +4,21 @@ import { SearchBar } from './components/SearchBar';
 import { ZoneFilters } from './components/ZoneFilters';
 import { ParkingModal } from './components/ParkingModal';
 import { ActiveParkingBanner } from './components/ActiveParkingBanner';
-import { SERGeoJSONFeatureCollection, ActiveParking, FilterState, StreetSearchResult } from './types';
+import { ScheduleStatusPill } from './components/ScheduleStatusPill';
+import { VehicleSelectorModal, VEHICLE_OPTIONS, BADGE_OPTIONS } from './components/VehicleSelectorModal';
+import { RoutePlannerModal } from './components/RoutePlannerModal';
+import {
+  SERGeoJSONFeatureCollection,
+  ActiveParking,
+  FilterState,
+  StreetSearchResult,
+  VehicleTypeId,
+  DGTBadgeId,
+  SmartRouteData
+} from './types';
 import { fetchZonas, fetchActiveParking } from './services/api';
 import { registerServiceWorker } from './services/notifications';
-import { MapPin, Navigation, Info } from 'lucide-react';
+import { MapPin, Navigation, Info, Car, Footprints, X, Sparkles, Route } from 'lucide-react';
 
 const DISTRICT_VIEWPORTS: Record<string, { center: [number, number]; zoom: number }> = {
   '': { center: [-3.688, 40.428], zoom: 13 }, // Todo Madrid
@@ -36,8 +47,23 @@ export const App: React.FC = () => {
   const [activeParking, setActiveParking] = useState<ActiveParking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [modalInitialCalle, setModalInitialCalle] = useState<string>('Zona SER Madrid');
+  const [modalInitialTipoPlaza, setModalInitialTipoPlaza] = useState<'VERDE' | 'AZUL'>('VERDE');
   const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>(null);
   const [showLegend, setShowLegend] = useState(false);
+
+  // Estados de Vehículo y Distintivo DGT (Persistidos en localStorage)
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleTypeId>(() => {
+    return (localStorage.getItem('ser_vehicle_type') as VehicleTypeId) || 'turismo';
+  });
+  const [selectedBadge, setSelectedBadge] = useState<DGTBadgeId>(() => {
+    return (localStorage.getItem('ser_dgt_badge') as DGTBadgeId) || 'ECO';
+  });
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+
+  // Estado del Planificador de Rutas Multimodales
+  const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
+  const [activeRoute, setActiveRoute] = useState<SmartRouteData | null>(null);
 
   // Inicializar Service Worker PWA y cargar datos iniciales
   useEffect(() => {
@@ -86,7 +112,8 @@ export const App: React.FC = () => {
   };
 
   const handleOpenParkingModal = () => {
-    // Si el usuario tiene geolocalización, la usamos, sino el centro de Madrid
+    setModalInitialCalle('Zona SER Madrid');
+    setModalInitialTipoPlaza('VERDE');
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -104,6 +131,23 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleSaveVehiclePreferences = (vehicle: VehicleTypeId, badge: DGTBadgeId) => {
+    setSelectedVehicle(vehicle);
+    setSelectedBadge(badge);
+    localStorage.setItem('ser_vehicle_type', vehicle);
+    localStorage.setItem('ser_dgt_badge', badge);
+  };
+
+  const handleParkAtRecommendedParking = (parking: SmartRouteData['parking']) => {
+    setSelectedCoords({ lat: parking.coords[1], lng: parking.coords[0] });
+    setModalInitialCalle(parking.nombre);
+    setModalInitialTipoPlaza(parking.color);
+    setIsModalOpen(true);
+  };
+
+  const currentVehicleObj = VEHICLE_OPTIONS.find(v => v.id === selectedVehicle);
+  const currentBadgeObj = BADGE_OPTIONS.find(b => b.id === selectedBadge);
+
   return (
     <div className="relative w-screen h-screen overflow-hidden flex flex-col bg-gray-100 font-sans">
       {/* Mapa de fondo completo */}
@@ -112,27 +156,63 @@ export const App: React.FC = () => {
           geojsonData={geojsonData}
           filters={filters}
           activeParking={activeParking}
+          activeRoute={activeRoute}
           onSelectLocation={(coords) => {
             setSelectedCoords(coords);
+            setModalInitialCalle('Ubicación seleccionada en mapa');
             setIsModalOpen(true);
           }}
           flyToCoords={flyToCoords}
+          onClearRoute={() => setActiveRoute(null)}
         />
       </div>
 
-      {/* Barra superior flotante (Buscador + Filtros) */}
-      <div className="relative z-10 p-3 sm:p-5 flex flex-col gap-3 pointer-events-none">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pointer-events-auto">
+      {/* Barra superior flotante */}
+      <div className="relative z-10 p-3 sm:p-5 flex flex-col gap-2.5 pointer-events-none">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pointer-events-auto">
           {/* Logo y Nombre de la App */}
           <div className="flex items-center gap-3 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border border-gray-200 self-start">
-            <img src="/spotly-logo.png"alt="Logo de Spotly"
-            className="w-8 h-8 rounded-xl object-contain"
+            <img src="/spotly-logo.png" alt="Logo de Spotly"
+              className="w-8 h-8 rounded-xl object-contain"
             />
             <div>
               <h1 className="font-extrabold text-sm text-gray-900 leading-none">Spotly</h1>
               <span className="text-[10px] font-semibold text-emerald-600 tracking-wide uppercase">SER Madrid 2026</span>
             </div>
           </div>
+
+          {/* Estado de Horario SER en Tiempo Real (Pastilla informativa) */}
+          <ScheduleStatusPill />
+
+          {/* Botón Selector de Vehículo y Distintivo DGT */}
+          <button
+            type="button"
+            onClick={() => setIsVehicleModalOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-gray-200 hover:bg-gray-50 transition-all text-xs font-semibold text-gray-800"
+            title="Seleccionar tipo de vehículo y distintivo DGT"
+          >
+            <span>{currentVehicleObj?.icono || '🚗'}</span>
+            <span className="hidden sm:inline">{currentVehicleObj?.nombre.split(' ')[0]}</span>
+            <span className={`px-1.5 py-0.5 rounded-md font-bold text-[10px] ${currentBadgeObj?.bg} ${currentBadgeObj?.color} border ${currentBadgeObj?.border}`}>
+              {currentBadgeObj?.nombre}
+            </span>
+            {currentVehicleObj?.exento || currentBadgeObj?.exento ? (
+              <span className="text-emerald-700 font-bold text-[10px] flex items-center gap-0.5">
+                <Sparkles className="w-3 h-3 text-emerald-600" /> Exento
+              </span>
+            ) : null}
+          </button>
+
+          {/* Botón Abrir Planificador de Ruta Multimodal */}
+          <button
+            type="button"
+            onClick={() => setIsRouteModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-md transition-all text-xs font-bold active:scale-95"
+            title="Calcular ruta en coche con parada en parking más cercano y andar a destino"
+          >
+            <Route className="w-4 h-4" />
+            <span>Planificar Ruta SER</span>
+          </button>
 
           {/* Buscador de calles con autocompletado y plazas */}
           <SearchBar onSelectStreet={handleSelectStreet} />
@@ -141,36 +221,84 @@ export const App: React.FC = () => {
           <ZoneFilters filters={filters} onChange={setFilters} />
         </div>
 
-        {/* Banner de Estacionamiento Activo y Alerta de 30 minutos */}
-        {activeParking && (
-          <div className="max-w-xl w-full self-center pointer-events-auto mt-1 animate-fade-in">
-            <ActiveParkingBanner
-              parking={activeParking}
-              onParkingEnded={() => setActiveParking(null)}
-              onCenterOnCar={(coords) => setFlyToCoords(coords)}
-            />
-          </div>
-        )}
-      </div>
+        {/* Banner de Ruta Activa Trazada en el Mapa */}
+        {
+          activeRoute && (
+            <div className="max-w-xl w-full self-center pointer-events-auto bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-blue-200 flex items-center justify-between gap-3 text-xs animate-fade-in">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-600 text-white rounded-xl">
+                  <Navigation className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-extrabold text-gray-900 block">
+                    Ruta activa: {activeRoute.origen.nombre} ➔ {activeRoute.parking.nombre} (Parking) ➔ {activeRoute.destino.nombre}
+                  </span>
+                  <span className="text-gray-500 text-[11px]">
+                    🚗 Coche {activeRoute.tramos.coche.distancia_km} km • 🚶 Andando {activeRoute.tramos.pie.distancia_m} m (~{activeRoute.resumen_viaje.tiempo_total_min} min total) • Tarifa: <strong>{activeRoute.parking.tarifa.exento ? 'Gratis (Exento)' : `${activeRoute.parking.tarifa.precio_total.toFixed(2)} €`}</strong>
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleParkAtRecommendedParking(activeRoute.parking)}
+                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px] whitespace-nowrap"
+                >
+                  Aparcar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveRoute(null)}
+                  className="p-1 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                  title="Quitar ruta del mapa"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )
+        }
 
-      {/* Botón flotante inferior para aparcar coche */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
+        {/* Banner de Estacionamiento Activo y Alerta de 30 minutos */}
+        {
+          activeParking && (
+            <div className="max-w-xl w-full self-center pointer-events-auto mt-1 animate-fade-in">
+              <ActiveParkingBanner
+                parking={activeParking}
+                onParkingEnded={() => setActiveParking(null)}
+                onCenterOnCar={(coords) => setFlyToCoords(coords)}
+              />
+            </div>
+          )
+        }
+      </div >
+
+      {/* Botones flotantes inferiores */}
+      < div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2.5" >
         <button
           onClick={handleOpenParkingModal}
           className="flex items-center gap-2.5 px-6 py-3.5 bg-white hover:bg-gray-300 text-black font-bold text-sm rounded-full shadow-2xl transition-all active:scale-95 border-2 border-white/20"
         >
-          <span className="text-base">🚗</span>
-          Aparcar mi coche aquí
+          <span>🚗</span>
+          Aparcar aquí
+        </button>
+
+        <button
+          onClick={() => setIsRouteModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm rounded-full shadow-2xl transition-all active:scale-95 border-2 border-white/20"
+        >
+          <Route className="w-4 h-4" />
+          <span className="hidden sm:inline">Ruta con Parking</span>
         </button>
 
         <button
           onClick={() => setShowLegend(!showLegend)}
-          className="p-3.5 bg-white/95 hover:bg-white text-gray-700 rounded-full shadow-xl border border-gray-200 transition-all active:scale-95"
+          className="p-3 bg-white/95 hover:bg-white text-gray-700 rounded-full shadow-xl border border-gray-200 transition-all active:scale-95"
           title="Ver leyenda de colores SER"
         >
-          <Info className="w-5 h-5 text-gray-600" />
+          <Info className="w-4 h-4 text-gray-600" />
         </button>
-      </div>
+      </div >
 
       {/* Leyenda explicativa SER */}
       {showLegend && (
@@ -189,6 +317,9 @@ export const App: React.FC = () => {
                 <strong className="text-blue-800">Zona Azul:</strong> Cualquier vehículo máx. 4 horas; rotación comercial.
               </div>
             </div>
+            <div className="p-2 bg-gray-50 rounded-lg text-[11px] text-gray-600">
+              <strong>Horario:</strong> L-V 9–21h, Sábados 9–15h, Domingos gratis.
+            </div>
           </div>
           <button
             onClick={() => setShowLegend(false)}
@@ -199,11 +330,35 @@ export const App: React.FC = () => {
         </div>
       )}
 
+      {/* Modal de Configuración de Vehículo y Distintivo DGT */}
+      <VehicleSelectorModal
+        isOpen={isVehicleModalOpen}
+        onClose={() => setIsVehicleModalOpen(false)}
+        selectedVehicle={selectedVehicle}
+        selectedBadge={selectedBadge}
+        onSave={handleSaveVehiclePreferences}
+      />
+
+      {/* Modal de Planificador de Rutas Multimodales */}
+      <RoutePlannerModal
+        isOpen={isRouteModalOpen}
+        onClose={() => setIsRouteModalOpen(false)}
+        selectedVehicle={selectedVehicle}
+        selectedBadge={selectedBadge}
+        onVehicleBadgeChange={handleSaveVehiclePreferences}
+        onSelectRouteOnMap={(route) => setActiveRoute(route)}
+        onParkAtRecommendedParking={handleParkAtRecommendedParking}
+      />
+
       {/* Modal para crear estacionamiento */}
       <ParkingModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         coords={selectedCoords}
+        initialCalle={modalInitialCalle}
+        initialTipoPlaza={modalInitialTipoPlaza}
+        selectedVehicle={selectedVehicle}
+        selectedBadge={selectedBadge}
         onParkingCreated={(parking) => setActiveParking(parking)}
       />
     </div>

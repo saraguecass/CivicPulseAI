@@ -1,0 +1,212 @@
+{
+  "metadata": {
+    "title": "Ordenanza Fiscal Reguladora de la Tasa por Estacionamiento de Vehículos (SER Madrid)",
+    "official_sources": [
+      "https://www.madrid.es/portales/munimadrid/es/Inicio/Movilidad-y-transportes/Servicio-de-Estacionamiento-Regulado-SER-Tarifas-y-vehiculos-no-sujetos-al-pago/?vgnextfmt=default&vgnextoid=972be4ce78dd6410VgnVCM1000000b205a0aRCRD&vgnextchannel=220e31d3b28fe410VgnVCM1000000b205a0aRCRD",
+      "https://www.madrid.es/portales/munimadrid/es/Inicio/Movilidad-y-transportes/Servicio-de-Estacionamiento-Regulado-SER-Horario-delimitacion-territorial-y-ambitos-diferenciados-/?vgnextfmt=default&vgnextoid=6f18e4ce78dd6410VgnVCM1000000b205a0aRCRD&vgnextchannel=220e31d3b28fe410VgnVCM1000000b205a0aRCRD",
+      "https://www.motor.mapfre.es/consejos-practicos/seguridad-vial/tarifas-y-horarios-de-la-zona-azul-madrid/"
+    ],
+    "last_updated": "2026-01-01"
+  },
+  "horarios": {
+    "lunes_a_viernes": {
+      "inicio": "09:00",
+      "fin": "21:00",
+      "descripcion": "Lunes a viernes (no festivos): 9:00 a 21:00 horas ininterrumpidamente"
+    },
+    "sabados": {
+      "inicio": "09:00",
+      "fin": "15:00",
+      "descripcion": "Sábados (no festivos): 9:00 a 15:00 horas ininterrumpidamente"
+    },
+    "agosto": {
+      "inicio": "09:00",
+      "fin": "15:00",
+      "descripcion": "Mes de agosto (lunes a sábado, no festivos): 9:00 a 15:00 horas"
+    },
+    "navidad_fin_ano": {
+      "dias": [
+        "12-24",
+        "12-31"
+      ],
+      "inicio": "09:00",
+      "fin": "15:00",
+      "descripcion": "Días 24 y 31 de diciembre: 9:00 a 15:00 horas"
+    },
+    "domingos_y_festivos": {
+      "gratuito": true,
+      "descripcion": "Domingos y festivos: Sin servicio todo el día (estacionamiento gratuito)"
+    },
+    "festivos_fijos_madrid": [
+      "01-01",
+      "01-06",
+      "05-01",
+      "05-02",
+      "05-15",
+      "08-15",
+      "10-12",
+      "11-01",
+      "11-09",
+      "12-06",
+      "12-08",
+      "12-25"
+    ]
+  },
+  "tarifas_base": {
+    "AZUL": {
+      "max_minutos": 240,
+      "descripcion": "Plazas Azules (Rotación): Máximo 4 horas continuas",
+      "tramos": [
+        { "minutos": 20, "precio": 0.25 },
+        { "minutos": 30, "precio": 0.40 },
+        { "minutos": 60, "precio": 1.10 },
+        { "minutos": 90, "precio": 1.70 },
+        { "minutos": 120, "precio": 2.75 },
+        { "minutos": 150, "precio": 3.90 },
+        { "minutos": 180, "precio": 5.20 },
+        { "minutos": 210, "precio": 6.70 },
+        { "minutos": 240, "precio": 8.20 }
+      ]
+    },
+    "VERDE": {
+      "max_minutos": 120,
+      "descripcion": "Plazas Verdes (Residentes / No residentes): Máximo 2 horas para no residentes",
+      "tramos": [
+        { "minutos": 20, "precio": 0.50 },
+        { "minutos": 30, "precio": 0.90 },
+        { "minutos": 60, "precio": 2.05 },
+        { "minutos": 90, "precio": 3.10 },
+        { "minutos": 120, "precio": 4.10 }
+      ]
+    }
+  },
+  "tipos_vehiculo_dgt": [
+    {
+      "id": "turismo",
+      "nombre": "Turismo / Coche",
+      "categoria": "M1",
+      "icono": "🚗",
+      "exento_base": false,
+      "descripcion": "Vehículo estándar de 4 o más ruedas para transporte de personas"
+    },
+    {
+      "id": "motocicleta",
+      "nombre": "Motocicleta",
+      "categoria": "L3e / L4e",
+      "icono": "🏍️",
+      "exento_base": true,
+      "descripcion": "Vehículo de 2 ruedas con motor superior a 50cc (Exento de pago SER)"
+    },
+    {
+      "id": "ciclomotor",
+      "nombre": "Ciclomotor",
+      "categoria": "L1e / L2e",
+      "icono": "🛵",
+      "exento_base": true,
+      "descripcion": "Vehículo de 2 ruedas hasta 50cc o equivalente eléctrico (Exento de pago SER)"
+    },
+    {
+      "id": "triciclo",
+      "nombre": "Vehículo de 3 ruedas",
+      "categoria": "L5e",
+      "icono": "🛺",
+      "exento_base": true,
+      "descripcion": "Vehículo de tres ruedas simétricas (Exento de pago SER)"
+    },
+    {
+      "id": "furgoneta",
+      "nombre": "Furgoneta / Comercial ligero",
+      "categoria": "N1",
+      "icono": "🚐",
+      "exento_base": false,
+      "descripcion": "Transporte de mercancías hasta 3.500 kg"
+    },
+    {
+      "id": "pmr",
+      "nombre": "Vehículo PMR",
+      "categoria": "PMR",
+      "icono": "♿",
+      "exento_base": true,
+      "descripcion": "Transporte de Personas con Movilidad Reducida con tarjeta oficial (Exento de pago SER)"
+    },
+    {
+      "id": "taxi",
+      "nombre": "Taxi en servicio",
+      "categoria": "SP",
+      "icono": "🚕",
+      "exento_base": true,
+      "descripcion": "Autotaxi o Eurotaxi en servicio con conductor presente (Exento de pago SER)"
+    }
+  ],
+  "distintivos_ambientales_dgt": [
+    {
+      "id": "CERO",
+      "nombre": "0 Emisiones",
+      "color_hex": "#0284c7",
+      "reduccion_porcentaje": 100,
+      "recargo_porcentaje": 0,
+      "exento": true,
+      "sin_limite_tiempo": true,
+      "descripcion": "Reducción del 100%: Gratuito y sin límite horario en Verde y Azul"
+    },
+    {
+      "id": "ECO",
+      "nombre": "ECO",
+      "color_hex": "#16a34a",
+      "reduccion_porcentaje": 75,
+      "recargo_porcentaje": 0,
+      "exento": false,
+      "sin_limite_tiempo": false,
+      "descripcion": "Reducción del 75% sobre la tarifa base del SER"
+    },
+    {
+      "id": "C",
+      "nombre": "Distintivo C (Verde)",
+      "color_hex": "#15803d",
+      "reduccion_porcentaje": 0,
+      "recargo_porcentaje": 0,
+      "exento": false,
+      "sin_limite_tiempo": false,
+      "descripcion": "Tarifa base ordinaria (0% variación)"
+    },
+    {
+      "id": "B",
+      "nombre": "Distintivo B (Amarillo)",
+      "color_hex": "#eab308",
+      "reduccion_porcentaje": 0,
+      "recargo_porcentaje": 20,
+      "exento": false,
+      "sin_limite_tiempo": false,
+      "descripcion": "Recargo del 20% sobre la tarifa base del SER"
+    },
+    {
+      "id": "A",
+      "nombre": "Sin distintivo (Categoría A)",
+      "color_hex": "#6b7280",
+      "reduccion_porcentaje": 0,
+      "recargo_porcentaje": 75,
+      "exento": false,
+      "restringido": true,
+      "sin_limite_tiempo": false,
+      "descripcion": "Prohibido el estacionamiento a no residentes en SER (salvo autorizaciones excepcionales)"
+    }
+  ],
+  "episodios_contaminacion_no2": {
+    "normal": {
+      "nombre": "Sin episodio (Ordinario)",
+      "recargo_porcentaje": 0,
+      "descripcion": "Condiciones normales de calidad del aire"
+    },
+    "escenario_1": {
+      "nombre": "Escenario 1 (Aviso NO₂)",
+      "recargo_porcentaje": 60,
+      "descripcion": "Recargo dinámico del 60% por concentración de NO₂"
+    },
+    "escenario_2": {
+      "nombre": "Escenario 2 / Alerta (Prohibición no residentes)",
+      "recargo_porcentaje": 100,
+      "restringe_no_residentes": true,
+      "descripcion": "Recargo del 100% y prohibición de estacionar en plazas SER a no residentes (salvo CERO y ECO)"
+    }
+  }
+}

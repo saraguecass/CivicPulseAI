@@ -1,4 +1,13 @@
-import { SERGeoJSONFeatureCollection, StreetSearchResult, ActiveParking } from '../types';
+import {
+  SERGeoJSONFeatureCollection,
+  StreetSearchResult,
+  ActiveParking,
+  SERScheduleStatus,
+  SERTariffResponse,
+  SmartRouteData,
+  VehicleTypeId,
+  DGTBadgeId
+} from '../types';
 
 const API_BASE = '/api';
 
@@ -31,6 +40,8 @@ export async function createParking(data: {
   lng: number;
   start_time: string;
   end_time: string;
+  tipo_vehiculo?: string;
+  distintivo_dgt?: string;
   user_id?: string;
   push_subscription?: any;
 }): Promise<ActiveParking> {
@@ -65,4 +76,67 @@ export async function getVapidPublicKey(): Promise<string> {
   } catch {
     return '';
   }
+}
+
+// --- Endpoints de Normativa SER, Tarifas y Rutas Multimodales ---
+
+export async function fetchSERInfo(): Promise<any> {
+  const res = await fetch(`${API_BASE}/ser/info`);
+  if (!res.ok) throw new Error('Error obteniendo información de tarifas SER');
+  return res.json();
+}
+
+export async function fetchCurrentSchedule(): Promise<SERScheduleStatus> {
+  const res = await fetch(`${API_BASE}/ser/estado-horario`);
+  if (!res.ok) throw new Error('Error consultando horario SER');
+  return res.json();
+}
+
+export async function calculateTariff(params: {
+  tipo_plaza: 'VERDE' | 'AZUL';
+  minutos: number;
+  tipo_vehiculo: VehicleTypeId;
+  distintivo_dgt: DGTBadgeId;
+  episodio_no2?: string;
+}): Promise<SERTariffResponse> {
+  const res = await fetch(`${API_BASE}/ser/calcular-tarifa`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+  if (!res.ok) throw new Error('Error al calcular tarifa');
+  return res.json();
+}
+
+export async function planSmartRoute(params: {
+  origen: any;
+  destino: any;
+  tipo_vehiculo: VehicleTypeId;
+  distintivo_dgt: DGTBadgeId;
+  duracion_minutos: number;
+  episodio_no2?: string;
+}): Promise<SmartRouteData> {
+  const res = await fetch(`${API_BASE}/rutas/planificar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Error al planificar ruta con parada en parking');
+  }
+  return res.json();
+}
+
+export async function fetchGeocodingAutocomplete(q: string): Promise<Array<{
+  label: string;
+  lat: number;
+  lng: number;
+  tipo: string;
+  distrito?: string;
+}>> {
+  if (!q || q.trim().length < 1) return [];
+  const res = await fetch(`${API_BASE}/geocoding/autocomplete?q=${encodeURIComponent(q.trim())}&limit=5`);
+  if (!res.ok) return [];
+  return res.json();
 }

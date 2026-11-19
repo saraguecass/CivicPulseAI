@@ -4,12 +4,21 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models import ActiveParking
 from app.schemas import ParkingCreate, ParkingOut
+from app.services.ser_calculator import calculate_smart_parking_period
 
 def create_parking(db: Session, parking_in: ParkingCreate) -> ParkingOut:
     """
-    Registra un estacionamiento y programa el aviso para 30 minutos antes del fin.
+    Registra un estacionamiento ajustando inteligentemente finPago = min(ahora + minutos, finHorarioSER).
+    Programa el aviso para 30 minutos antes del vencimiento ajustado.
     """
-    alert_time = parking_in.end_time - timedelta(minutes=30)
+    requested_minutes = max(1, int((parking_in.end_time - parking_in.start_time).total_seconds() / 60))
+    smart_period = calculate_smart_parking_period(
+        start_time=parking_in.start_time,
+        requested_minutes=requested_minutes
+    )
+
+    actual_end_time = smart_period["end_time"]
+    actual_alert_time = smart_period["alert_time"]
     
     push_sub_str = None
     if parking_in.push_subscription:
@@ -22,8 +31,8 @@ def create_parking(db: Session, parking_in: ParkingCreate) -> ParkingOut:
         lat=parking_in.lat,
         lng=parking_in.lng,
         start_time=parking_in.start_time,
-        end_time=parking_in.end_time,
-        alert_time=alert_time,
+        end_time=actual_end_time,
+        alert_time=actual_alert_time,
         notification_sent=False,
         push_subscription=push_sub_str,
         created_at=datetime.utcnow()
@@ -47,7 +56,9 @@ def create_parking(db: Session, parking_in: ParkingCreate) -> ParkingOut:
         alert_time=db_parking.alert_time,
         notification_sent=db_parking.notification_sent,
         created_at=db_parking.created_at,
-        minutos_restantes=minutos_restantes
+        minutos_restantes=minutos_restantes,
+        limitado_por_ser=smart_period["limitado_por_ser"],
+        explicacion_ajuste=smart_period["explicacion"]
     )
 
 def get_active_parking(db: Session, user_id: str) -> Optional[ParkingOut]:
@@ -77,7 +88,9 @@ def get_active_parking(db: Session, user_id: str) -> Optional[ParkingOut]:
         alert_time=parking.alert_time,
         notification_sent=parking.notification_sent,
         created_at=parking.created_at,
-        minutos_restantes=minutos_restantes
+        minutos_restantes=minutos_restantes,
+        limitado_por_ser=False,
+        explicacion_ajuste=None
     )
 
 def delete_parking(db: Session, parking_id: int) -> bool:
