@@ -1,41 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { Map } from './components/Map';
-import { SearchBar } from './components/SearchBar';
-import { ZoneFilters } from './components/ZoneFilters';
-import { ParkingModal } from './components/ParkingModal';
-import { ActiveParkingBanner } from './components/ActiveParkingBanner';
-import { SERGeoJSONFeatureCollection, ActiveParking, FilterState, StreetSearchResult } from './types';
-import { fetchZonas, fetchActiveParking } from './services/api';
-import { registerServiceWorker } from './services/notifications';
-import { MapPin, Navigation, Info } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Map } from "./components/Map";
+import { SearchBar } from "./components/SearchBar";
+import { ZoneFilters } from "./components/ZoneFilters";
+import { ParkingModal } from "./components/ParkingModal";
+import { ActiveParkingBanner } from "./components/ActiveParkingBanner";
+import {
+  SERGeoJSONFeatureCollection,
+  ActiveParking,
+  FilterState,
+  StreetSearchResult,
+} from "./types";
+import { fetchZonas, fetchActiveParking } from "./services/api";
+import { registerServiceWorker } from "./services/notifications";
+import { MapPin, Navigation, Info } from "lucide-react";
 
-const DISTRICT_VIEWPORTS: Record<string, { center: [number, number]; zoom: number }> = {
-  '': { center: [-3.688, 40.428], zoom: 13 }, // Todo Madrid
-  'Arganzuela': { center: [-3.69814, 40.39883], zoom: 14 },
-  'Carabanchel': { center: [-3.71535, 40.39585], zoom: 14.5 },
-  'Centro': { center: [-3.70569, 40.41777], zoom: 14 },
-  'Chamartín': { center: [-3.67655, 40.4602], zoom: 13.5 },
-  'Chamberí': { center: [-3.70437, 40.43633], zoom: 14.2 },
-  'Ciudad Lineal': { center: [-3.65413, 40.44195], zoom: 13.8 },
-  'Fuencarral - El Pardo': { center: [-3.70135, 40.48041], zoom: 14.5 },
-  'Latina': { center: [-3.73233, 40.41038], zoom: 14.5 },
-  'Moncloa - Aravaca': { center: [-3.7228, 40.44424], zoom: 13.8 },
-  'Retiro': { center: [-3.67737, 40.4087], zoom: 14 },
-  'Salamanca': { center: [-3.67581, 40.43174], zoom: 14 },
-  'Tetuán': { center: [-3.7003, 40.46054], zoom: 14 },
-  'Usera': { center: [-3.70576, 40.3863], zoom: 14.5 },
+const DISTRICT_VIEWPORTS: Record<
+  string,
+  { center: [number, number]; zoom: number }
+> = {
+  "": { center: [-3.688, 40.428], zoom: 13 }, // Todo Madrid
+  Arganzuela: { center: [-3.69814, 40.39883], zoom: 14 },
+  Carabanchel: { center: [-3.71535, 40.39585], zoom: 14.5 },
+  Centro: { center: [-3.70569, 40.41777], zoom: 14 },
+  Chamartín: { center: [-3.67655, 40.4602], zoom: 13.5 },
+  Chamberí: { center: [-3.70437, 40.43633], zoom: 14.2 },
+  "Ciudad Lineal": { center: [-3.65413, 40.44195], zoom: 13.8 },
+  "Fuencarral - El Pardo": { center: [-3.70135, 40.48041], zoom: 14.5 },
+  Latina: { center: [-3.73233, 40.41038], zoom: 14.5 },
+  "Moncloa - Aravaca": { center: [-3.7228, 40.44424], zoom: 13.8 },
+  Retiro: { center: [-3.67737, 40.4087], zoom: 14 },
+  Salamanca: { center: [-3.67581, 40.43174], zoom: 14 },
+  Tetuán: { center: [-3.7003, 40.46054], zoom: 14 },
+  Usera: { center: [-3.70576, 40.3863], zoom: 14.5 },
 };
 
 export const App: React.FC = () => {
-  const [geojsonData, setGeojsonData] = useState<SERGeoJSONFeatureCollection | null>(null);
+  const [geojsonData, setGeojsonData] =
+    useState<SERGeoJSONFeatureCollection | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     showVerde: true,
     showAzul: true,
-    distrito: ''
+    distrito: "",
   });
-  const [activeParking, setActiveParking] = useState<ActiveParking | null>(null);
+  const [activeParking, setActiveParking] = useState<ActiveParking | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedCoords, setSelectedCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>(null);
   const [showLegend, setShowLegend] = useState(false);
 
@@ -65,21 +79,24 @@ export const App: React.FC = () => {
   const loadZonas = async () => {
     try {
       const data = await fetchZonas({
-        distrito: filters.distrito || undefined
+        distrito: filters.distrito || undefined,
       });
       setGeojsonData(data);
     } catch (err) {
-      console.error('Error cargando zonas:', err);
+      console.error("Error cargando zonas:", err);
     }
   };
 
   const handleSelectStreet = (street: StreetSearchResult) => {
     // Si la calle pertenece a un distrito distinto al filtro actual, cambiamos al distrito de la calle
     // para que se carguen y pinten sus tramos en el mapa
-    if (filters.distrito && filters.distrito.toLowerCase() !== street.distrito.toLowerCase()) {
-      setFilters(prev => ({
+    if (
+      filters.distrito &&
+      filters.distrito.toLowerCase() !== street.distrito.toLowerCase()
+    ) {
+      setFilters((prev) => ({
         ...prev,
-        distrito: street.distrito
+        distrito: street.distrito,
       }));
     }
     setFlyToCoords(street.center_coords);
@@ -90,13 +107,16 @@ export const App: React.FC = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setSelectedCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setSelectedCoords({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          });
           setIsModalOpen(true);
         },
         () => {
           setSelectedCoords({ lat: 40.428, lng: -3.688 });
           setIsModalOpen(true);
-        }
+        },
       );
     } else {
       setSelectedCoords({ lat: 40.428, lng: -3.688 });
@@ -125,12 +145,18 @@ export const App: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pointer-events-auto">
           {/* Logo y Nombre de la App */}
           <div className="flex items-center gap-3 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border border-gray-200 self-start">
-            <img src="/spotly-logo.png"alt="Logo de Spotly"
-            className="w-8 h-8 rounded-xl object-contain"
+            <img
+              src="/spotly-logo.png"
+              alt="Logo de Spotly"
+              className="w-8 h-8 rounded-xl object-contain"
             />
             <div>
-              <h1 className="font-extrabold text-sm text-gray-900 leading-none">Spotly</h1>
-              <span className="text-[10px] font-semibold text-emerald-600 tracking-wide uppercase">SER Madrid 2026</span>
+              <h1 className="font-extrabold text-sm text-gray-900 leading-none">
+                Spotly
+              </h1>
+              <span className="text-[10px] font-semibold text-emerald-600 tracking-wide uppercase">
+                SER Madrid 2026
+              </span>
             </div>
           </div>
 
@@ -175,18 +201,23 @@ export const App: React.FC = () => {
       {/* Leyenda explicativa SER */}
       {showLegend && (
         <div className="absolute bottom-20 left-6 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-gray-200 text-xs max-w-xs animate-fade-in">
-          <h4 className="font-bold text-gray-900 mb-2">Regulación SER Madrid</h4>
+          <h4 className="font-bold text-gray-900 mb-2">
+            Regulación SER Madrid
+          </h4>
           <div className="space-y-2">
             <div className="flex items-start gap-2">
               <span className="w-3 h-3 rounded-full bg-green-500 mt-0.5 shrink-0" />
               <div>
-                <strong className="text-green-800">Zona Verde:</strong> Residentes del barrio sin límite de tiempo; no residentes máx. 2 horas.
+                <strong className="text-green-800">Zona Verde:</strong>{" "}
+                Residentes del barrio sin límite de tiempo; no residentes máx. 2
+                horas.
               </div>
             </div>
             <div className="flex items-start gap-2">
               <span className="w-3 h-3 rounded-full bg-blue-500 mt-0.5 shrink-0" />
               <div>
-                <strong className="text-blue-800">Zona Azul:</strong> Cualquier vehículo máx. 4 horas; rotación comercial.
+                <strong className="text-blue-800">Zona Azul:</strong> Cualquier
+                vehículo máx. 4 horas; rotación comercial.
               </div>
             </div>
           </div>

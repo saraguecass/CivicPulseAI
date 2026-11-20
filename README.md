@@ -61,6 +61,19 @@ npm run dev
 
 ---
 
+## 🚀 Despliegue en Render
+
+Despliega el backend y el frontend como servicios separados:
+
+1. **Backend:** crea un servicio Web con runtime Docker y directorio raíz `backend`. Render usará el `Dockerfile` y el backend escuchará en el puerto asignado por Render.
+2. **Base de datos:** crea una base PostgreSQL en Render y configura `DATABASE_URL` en el backend con su URL interna. El backend acepta URLs `postgres://` y `postgresql://`.
+3. **Frontend:** crea un Static Site con directorio raíz `frontend`, comando de build `npm ci && npm run build` y directorio publicado `dist`.
+4. En las variables de entorno de build del frontend, configura `VITE_API_URL` con la URL pública base del backend (por ejemplo, `https://civicpulse-api.onrender.com`, sin `/api` al final) y vuelve a desplegar el frontend.
+
+La URL `VITE_API_URL` se incorpora durante la compilación. Si no se configura, la aplicación usa `http://localhost:8000`, destinado al desarrollo local. El backend permite CORS para todos los orígenes.
+
+---
+
 ## 📊 Fuentes de Datos Abiertos Utilizadas
 
 - **Dataset SER Calles 2026:** [Portal de Datos Abiertos del Ayuntamiento de Madrid (218228-0-ser-calles)](https://datos.madrid.es/dataset/218228-0-ser-calles/resource/218228-1-ser-calles-csv)

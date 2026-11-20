@@ -1,6 +1,7 @@
 import { SERGeoJSONFeatureCollection, StreetSearchResult, ActiveParking } from '../types';
 
-const API_BASE = '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = `${API_URL.replace(/\/+$/, '')}/api`;
 const ANONYMOUS_USER_ID_KEY = 'spotly-anonymous-user-id';
 
 export function getAnonymousUserId(): string {
