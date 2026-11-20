@@ -1,4 +1,8 @@
+import os
+import math
 import json
+import sqlite3
+from app.config import DEFAULT_DB_PATH, BACKEND_DIR
 
 # Dataset denso de alta precisión para el SER de Madrid.
 # Contiene todos los puntos intermedios (curvas, cruces y bifurcaciones) para que el trazado
@@ -581,19 +585,221 @@ MADRID_SER_SEED = [
     }
 ]
 
+def utm30n_to_wgs84(easting: float, northing: float):
+    """Conversión geodésica exacta de ETRS89 / UTM Huso 30N a WGS84."""
+    a = 6378137.0
+    f = 1 / 298.257223563
+    k0 = 0.9996
+    e = math.sqrt(2 * f - f * f)
+    e1 = (1 - math.sqrt(1 - e * e)) / (1 + math.sqrt(1 - e * e))
+    
+    x = easting - 500000.0
+    y = northing
+    
+    m = y / k0
+    mu = m / (a * (1 - e * e / 4 - 3 * e**4 / 64 - 5 * e**6 / 256))
+    
+    phi1 = mu + (3 * e1 / 2 - 27 * e1**3 / 32) * math.sin(2 * mu) + \
+           (21 * e1**2 / 16 - 55 * e1**4 / 32) * math.sin(4 * mu) + \
+           (151 * e1**3 / 96) * math.sin(6 * mu) + \
+           (1097 * e1**4 / 512) * math.sin(8 * mu)
+           
+    c1 = e * e / (1 - e * e) * (math.cos(phi1)**2)
+    t1 = math.tan(phi1)**2
+    n1 = a / math.sqrt(1 - e * e * (math.sin(phi1)**2))
+    r1 = a * (1 - e * e) / ((1 - e * e * (math.sin(phi1)**2))**1.5)
+    d = x / (n1 * k0)
+    
+    lat = phi1 - (n1 * math.tan(phi1) / r1) * (
+        d * d / 2 -
+        (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * e * e / (1 - e * e)) * d**4 / 24 +
+        (61 + 90 * t1 + 298 * c1 + 45 * t1 * t1) * d**6 / 720
+    )
+    
+    lon = (d - (1 + 2 * t1 + c1) * d**3 / 6 +
+           (5 - 2 * c1 + 28 * t1) * d**5 / 120) / math.cos(phi1)
+           
+    lon_deg = -3.0 + math.degrees(lon)
+    lat_deg = math.degrees(lat)
+    return round(lon_deg, 6), round(lat_deg, 6)
+
+def format_street_name(raw_name: str) -> str:
+    """Formatea 'AGUAS, CALLE, DE LAS' -> 'Calle de las Aguas'."""
+    if not isinstance(raw_name, str):
+        return "Calle"
+    parts = [p.strip() for p in raw_name.split(',')]
+    if len(parts) == 3:
+        tipo = parts[1].capitalize()
+        art = parts[2].lower()
+        nom = parts[0].title()
+        return f"{tipo} {art} {nom}".strip()
+    elif len(parts) == 2:
+        tipo = parts[1].capitalize()
+        nom = parts[0].title()
+        return f"{tipo} {nom}".strip()
+    return raw_name.title()
+
+def sort_points_along_street(pts):
+    """Ordena los puntos a lo largo del eje de la calle para crear un LineString continuo."""
+    if len(pts) <= 1:
+        if len(pts) == 1:
+            p = pts[0]
+            return [[round(p[0] - 0.0001, 6), p[1]], [round(p[0] + 0.0001, 6), p[1]]]
+        return []
+    
+    pts = sorted(pts, key=lambda p: (p[0], p[1]))
+    ordered = [pts.pop(0)]
+    while pts:
+        last = ordered[-1]
+        pts.sort(key=lambda p: (p[0] - last[0])**2 + (p[1] - last[1])**2)
+        ordered.append(pts.pop(0))
+    return ordered
+
+def load_from_sqlite(db, sq_path: str) -> int:
+    """Carga masiva rápida desde un archivo SQLite existente hacia la sesión de base de datos activa."""
+    from app.models import SERStreetSegment
+    try:
+        conn = sqlite3.connect(sq_path)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT cod_via, nombre_calle, tipo_reserva, color, num_plazas, distrito, barrio, coordinates_json
+            FROM ser_street_segments
+        """)
+        rows = cur.fetchall()
+        conn.close()
+
+        if len(rows) < 500:
+            return 0
+
+        objects = [
+            SERStreetSegment(
+                cod_via=r[0],
+                nombre_calle=r[1],
+                tipo_reserva=r[2],
+                color=r[3],
+                num_plazas=r[4],
+                distrito=r[5],
+                barrio=r[6],
+                coordinates_json=r[7]
+            )
+            for r in rows
+        ]
+        db.bulk_save_objects(objects)
+        db.commit()
+        return len(objects)
+    except Exception as e:
+        print(f"[ETL] Error al cargar desde SQLite {sq_path}: {e}")
+        db.rollback()
+        return 0
+
+def load_from_csv(db, csv_path: str) -> int:
+    """Procesa el CSV oficial del Ayuntamiento de Madrid y lo inserta en la base de datos."""
+    import pandas as pd
+    from app.models import SERStreetSegment
+
+    print(f"[ETL] Cargando dataset real desde CSV: {csv_path}...")
+    df = pd.read_csv(csv_path, sep=';', encoding='latin-1')
+
+    def parse_color(c):
+        if not isinstance(c, str):
+            return 'VERDE'
+        c_upper = c.upper()
+        if 'AZUL' in c_upper or 'ALTA ROTACIÓN' in c_upper:
+            return 'AZUL'
+        return 'VERDE'
+
+    df['color_clean'] = df['color'].apply(parse_color)
+    df['numero_plazas'] = pd.to_numeric(df['numero_plazas'], errors='coerce').fillna(1).astype(int)
+
+    grouped = df.groupby(['distrito', 'barrio', 'calle', 'color_clean'])
+    objects = []
+
+    for (distrito, barrio, raw_calle, color), group in grouped:
+        calle_formateada = format_street_name(raw_calle)
+        total_plazas = int(group['numero_plazas'].sum())
+
+        pts = []
+        for _, row in group.iterrows():
+            try:
+                gx = float(str(row['gis_x']).replace(',', '.'))
+                gy = float(str(row['gis_y']).replace(',', '.'))
+                pt = utm30n_to_wgs84(gx, gy)
+                pts.append(pt)
+            except Exception:
+                continue
+
+        coords = sort_points_along_street(pts)
+        if not coords:
+            continue
+
+        objects.append(SERStreetSegment(
+            nombre_calle=calle_formateada,
+            tipo_reserva=color,
+            color=color,
+            num_plazas=total_plazas,
+            distrito=str(distrito).strip(),
+            barrio=str(barrio).strip(),
+            coordinates_json=json.dumps(coords)
+        ))
+
+    if objects:
+        db.bulk_save_objects(objects)
+        db.commit()
+        return len(objects)
+    return 0
+
 def seed_database_if_empty(db, force_reload: bool = False):
     from app.models import SERStreetSegment
 
     count = db.query(SERStreetSegment).count()
-    if count > 0 and not force_reload:
+    if count >= 500 and not force_reload:
+        print(f"[ETL] Base de datos lista con {count} tramos SER oficiales de Madrid.")
         return count
 
-    if force_reload:
-        print("[ETL] Actualizando base de datos con dataset denso de alta precisión...")
+    if count > 0:
+        print(f"[ETL] Detectados {count} tramos (datos incompletos o mock). Reemplazando por el dataset completo oficial...")
         db.query(SERStreetSegment).delete()
         db.commit()
 
-    print("[ETL] Insertando tramos SER de Madrid con trazados viarios multi-punto...")
+    # 1. Intentar cargar desde el archivo SQLite pre-procesado
+    sqlite_candidates = [
+        DEFAULT_DB_PATH,
+        os.path.join(BACKEND_DIR, "civicpulse.db"),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "civicpulse.db")),
+        "/app/civicpulse.db",
+        "civicpulse.db",
+        os.path.join(os.getcwd(), "backend", "civicpulse.db")
+    ]
+
+    for sq_path in sqlite_candidates:
+        if os.path.exists(sq_path) and os.path.getsize(sq_path) > 100000:
+            print(f"[ETL] Importando dataset oficial desde SQLite: {sq_path}...")
+            loaded = load_from_sqlite(db, sq_path)
+            if loaded >= 500:
+                print(f"[ETL] ✅ ¡Carga completada! {loaded} tramos reales insertados en la base de datos.")
+                return loaded
+
+    # 2. Si no hay SQLite pre-construido, intentar procesar el CSV oficial
+    csv_candidates = [
+        os.path.join(BACKEND_DIR, "data", "ser_calles_real.csv"),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "ser_calles_real.csv")),
+        "/app/data/ser_calles_real.csv",
+        "data/ser_calles_real.csv",
+        os.path.join(os.getcwd(), "backend", "data", "ser_calles_real.csv")
+    ]
+
+    for csv_path in csv_candidates:
+        if os.path.exists(csv_path):
+            try:
+                loaded = load_from_csv(db, csv_path)
+                if loaded >= 500:
+                    print(f"[ETL] ✅ ¡Carga completada desde CSV! {loaded} tramos reales insertados.")
+                    return loaded
+            except Exception as e:
+                print(f"[ETL] Error procesando CSV {csv_path}: {e}")
+
+    # 3. Fallback a datos mock sólo si no hay ninguna fuente oficial
+    print("[ETL] Aviso: No se encontró el dataset oficial. Insertando datos semilla mock...")
     for item in MADRID_SER_SEED:
         segment = SERStreetSegment(
             cod_via=item.get("cod_via"),
@@ -607,5 +813,5 @@ def seed_database_if_empty(db, force_reload: bool = False):
         )
         db.add(segment)
     db.commit()
-    print(f"[ETL] Carga completada: {len(MADRID_SER_SEED)} tramos densos insertados.")
+    print(f"[ETL] Fallback completado: {len(MADRID_SER_SEED)} tramos mock insertados.")
     return len(MADRID_SER_SEED)

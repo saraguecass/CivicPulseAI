@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ["assistant-storage-safely-medical.trycloudflare.com"],
+    allowedHosts: ["wealth-snow-sphere-reproduce.trycloudflare.com"],
     port: 5173,
     proxy: {
       "/api": {
